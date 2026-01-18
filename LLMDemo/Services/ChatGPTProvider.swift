@@ -28,12 +28,22 @@ struct OpenAIResponse: Codable {
     }
 }
 
+struct OpenAIErrorResponse: Codable {
+    let error: ErrorDetail
+
+    struct ErrorDetail: Codable {
+        let message: String
+        let type: String
+        let code: String?
+    }
+}
+
 // MARK: - ChatGPT Provider Implementation
 
 class ChatGPTProvider: AIProvider {
     private var apiKey: String = ""
     private let endpoint = "https://api.openai.com/v1/chat/completions"
-    private let model = "gpt-3.5-turbo"
+    private let model = "gpt-4o-mini" // Updated for 2026 - cost-effective and current
 
     func configure(apiKey: String) {
         self.apiKey = apiKey
@@ -95,13 +105,29 @@ class ChatGPTProvider: AIProvider {
         switch httpResponse.statusCode {
         case 200...299:
             break
+        case 400:
+            // Parse OpenAI error response for bad requests
+            if let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                throw AIProviderError.networkError("OpenAI Error: \(errorResponse.error.message)")
+            }
+            throw AIProviderError.networkError("Bad request (400)")
         case 401:
             throw AIProviderError.invalidAPIKey
+        case 404:
+            // Model not found or resource doesn't exist
+            if let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                throw AIProviderError.networkError("Not found: \(errorResponse.error.message)")
+            }
+            throw AIProviderError.networkError("Resource not found (404)")
         case 429:
             throw AIProviderError.rateLimitExceeded
         case 500...599:
             throw AIProviderError.serverError(httpResponse.statusCode)
         default:
+            // Try to parse error message for any other errors
+            if let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                throw AIProviderError.networkError("HTTP \(httpResponse.statusCode): \(errorResponse.error.message)")
+            }
             throw AIProviderError.networkError("HTTP \(httpResponse.statusCode)")
         }
 
@@ -149,16 +175,39 @@ class ChatGPTProvider: AIProvider {
             throw AIProviderError.parsingError("Failed to encode request")
         }
 
-        let (_, response) = try await URLSession.shared.data(for: urlRequest)
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AIProviderError.invalidResponse
         }
 
-        if httpResponse.statusCode == 401 {
+        switch httpResponse.statusCode {
+        case 200...299:
+            return true
+        case 400:
+            // Parse OpenAI error response for bad requests
+            if let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                throw AIProviderError.networkError("OpenAI Error: \(errorResponse.error.message)")
+            }
+            throw AIProviderError.networkError("Bad request (400)")
+        case 401:
             throw AIProviderError.invalidAPIKey
+        case 404:
+            // Model not found or resource doesn't exist
+            if let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                throw AIProviderError.networkError("Not found: \(errorResponse.error.message)")
+            }
+            throw AIProviderError.networkError("Resource not found (404)")
+        case 429:
+            throw AIProviderError.rateLimitExceeded
+        case 500...599:
+            throw AIProviderError.serverError(httpResponse.statusCode)
+        default:
+            // Try to parse error message for any other errors
+            if let errorResponse = try? JSONDecoder().decode(OpenAIErrorResponse.self, from: data) {
+                throw AIProviderError.networkError("HTTP \(httpResponse.statusCode): \(errorResponse.error.message)")
+            }
+            return false
         }
-
-        return httpResponse.statusCode == 200
     }
 }
