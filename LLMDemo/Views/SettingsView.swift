@@ -31,7 +31,7 @@ struct SettingsView: View {
                 }
 
                 Section("API Key") {
-                    SecureField("Enter API Key", text: $apiKeyInput)
+                    TextField("Enter API Key", text: $apiKeyInput)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
 

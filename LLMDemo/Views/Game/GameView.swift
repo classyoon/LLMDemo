@@ -14,7 +14,7 @@ struct GameView: View {
     @State private var showGuessDialog: Bool = false
     @State private var navigateToResult: Bool = false
 
-    var gameManager: GameManager
+    @Bindable var gameManager: GameManager
 
     var body: some View {
         VStack(spacing: 0) {
@@ -105,8 +105,9 @@ struct GameView: View {
 }
 
 #Preview {
+    @Previewable @State var gameManager = GameManager()
     NavigationStack {
-        GameView(gameManager: GameManager())
+        GameView(gameManager: gameManager)
             .modelContainer(for: [APIKeyStore.self, ChatMessage.self, GameSession.self])
     }
 }

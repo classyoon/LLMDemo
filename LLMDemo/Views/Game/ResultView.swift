@@ -38,9 +38,9 @@ struct ResultView: View {
                     Text(isCorrect ? "Correct!" : "Incorrect!")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-
-                    if let guard = actualGuard {
-                        Text("The guard was the \(guard.displayName)")
+                   
+                    if let guardman = actualGuard {
+                        Text("The guard was the \(guardman.displayName)")
                             .font(.title2)
                             .foregroundColor(.secondary)
                     }
