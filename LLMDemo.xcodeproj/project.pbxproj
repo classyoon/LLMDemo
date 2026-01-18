@@ -27,6 +27,7 @@
 		CA5DC0912F1C78C000F468F9 /* LLMDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LLMDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA5DC09E2F1C78C100F468F9 /* LLMDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LLMDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA5DC0A82F1C78C100F468F9 /* LLMDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LLMDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA5DC0BB2F1C78C100F468F9 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +76,7 @@
 		CA5DC0882F1C78C000F468F9 = {
 			isa = PBXGroup;
 			children = (
+				CA5DC0BB2F1C78C100F468F9 /* .gitignore */,
 				CA5DC0932F1C78C000F468F9 /* LLMDemo */,
 				CA5DC0A12F1C78C100F468F9 /* LLMDemoTests */,
 				CA5DC0AB2F1C78C100F468F9 /* LLMDemoUITests */,
