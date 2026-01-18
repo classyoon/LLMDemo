@@ -97,7 +97,11 @@ class GameManager {
         session.completeGame(playerGuess: guess.rawValue)
 
         // Save context to persist game results
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            errorMessage = "Failed to save game result: \(error.localizedDescription)"
+        }
 
         // Determine if guess was correct
         let isCorrect = (guess == actualGuard)
