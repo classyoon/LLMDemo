@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct LLMDemoApp: App {
@@ -13,5 +14,6 @@ struct LLMDemoApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [APIKeyStore.self, ChatMessage.self, GameSession.self])
     }
 }
