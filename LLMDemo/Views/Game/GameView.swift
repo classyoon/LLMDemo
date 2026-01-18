@@ -100,7 +100,7 @@ struct GameView: View {
     }
 
     private func makeGuess(_ guess: GuardType) {
-        gameManager.makeGuess(guess)
+        gameManager.makeGuess(guess, context: modelContext)
     }
 }
 
