@@ -105,14 +105,14 @@ struct MainMenuView: View {
     }
 
     private func startNewGame() {
-        // Check if API key exists
-        guard let apiKey = apiKeys.first(where: { $0.provider == ProviderType.chatGPT.rawValue }) else {
+        // Check if API key exists for default provider
+        guard let apiKey = apiKeys.first(where: { $0.provider == ProviderType.defaultProvider.rawValue }) else {
             showNoAPIKeyAlert = true
             return
         }
 
         // Create and configure provider
-        let provider = ProviderFactory.createProvider(type: .chatGPT)
+        let provider = ProviderFactory.createProvider(type: .defaultProvider)
         provider.configure(apiKey: apiKey.apiKey)
 
         // Start new game

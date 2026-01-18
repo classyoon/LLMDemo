@@ -13,7 +13,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var apiKeys: [APIKeyStore]
 
-    @State private var selectedProvider: ProviderType = .chatGPT
+    @State private var selectedProvider: ProviderType = .defaultProvider
     @State private var apiKeyInput: String = ""
     @State private var isValidating: Bool = false
     @State private var validationMessage: String?
