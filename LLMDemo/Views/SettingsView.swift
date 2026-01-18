@@ -15,9 +15,11 @@ struct SettingsView: View {
 
     @State private var selectedProvider: ProviderType = .chatGPT
     @State private var apiKeyInput: String = ""
-    @State private var isValidating: Bool = false
-    @State private var validationMessage: String?
-    @State private var showValidationAlert: Bool = false
+    @State private var isTesting: Bool = false
+    @State private var saveMessage: String?
+    @State private var showSaveAlert: Bool = false
+    @State private var testMessage: String?
+    @State private var showTestAlert: Bool = false
 
     var body: some View {
         NavigationView {
@@ -28,6 +30,9 @@ struct SettingsView: View {
                             Text(provider.displayName).tag(provider)
                         }
                     }
+                    .onChange(of: selectedProvider) { _, _ in
+                        loadExistingKey()
+                    }
                 }
 
                 Section("API Key") {
@@ -37,16 +42,25 @@ struct SettingsView: View {
 
                     Button(action: saveAPIKey) {
                         HStack {
-                            if isValidating {
+                            Image(systemName: "square.and.arrow.down")
+                            Text("Save API Key")
+                        }
+                    }
+                    .disabled(apiKeyInput.isEmpty)
+
+                    Button(action: testAPIKey) {
+                        HStack {
+                            if isTesting {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle())
-                                Text("Validating...")
+                                Text("Testing...")
                             } else {
-                                Text("Save API Key")
+                                Image(systemName: "checkmark.circle")
+                                Text("Test API Key")
                             }
                         }
                     }
-                    .disabled(apiKeyInput.isEmpty || isValidating)
+                    .disabled(!hasSavedKey || isTesting)
                 }
 
                 if !apiKeys.isEmpty {
@@ -78,14 +92,17 @@ struct SettingsView: View {
                     }
                 }
             }
-            .alert("Validation Result", isPresented: $showValidationAlert) {
-                Button("OK", role: .cancel) {
-                    if validationMessage?.contains("successfully") == true {
-                        dismiss()
-                    }
-                }
+            .alert("Saved", isPresented: $showSaveAlert) {
+                Button("OK", role: .cancel) {}
             } message: {
-                if let message = validationMessage {
+                if let message = saveMessage {
+                    Text(message)
+                }
+            }
+            .alert("Test Result", isPresented: $showTestAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let message = testMessage {
                     Text(message)
                 }
             }
@@ -95,52 +112,73 @@ struct SettingsView: View {
         }
     }
 
+    private var hasSavedKey: Bool {
+        return apiKeys.contains(where: { $0.provider == selectedProvider.rawValue })
+    }
+
     private func loadExistingKey() {
         if let existingKey = apiKeys.first(where: { $0.provider == selectedProvider.rawValue }) {
             apiKeyInput = existingKey.apiKey
+        } else {
+            apiKeyInput = ""
         }
     }
 
     private func saveAPIKey() {
-        isValidating = true
-        validationMessage = nil
+        // Save or update API key immediately without validation
+        if let existingKey = apiKeys.first(where: { $0.provider == selectedProvider.rawValue }) {
+            existingKey.updateKey(apiKeyInput)
+        } else {
+            let newKey = APIKeyStore(provider: selectedProvider.rawValue, apiKey: apiKeyInput)
+            modelContext.insert(newKey)
+        }
+
+        do {
+            try modelContext.save()
+            saveMessage = "API key saved successfully! You can now test it to verify it works."
+            showSaveAlert = true
+        } catch {
+            saveMessage = "Failed to save API key: \(error.localizedDescription)"
+            showSaveAlert = true
+        }
+    }
+
+    private func testAPIKey() {
+        guard let savedKey = apiKeys.first(where: { $0.provider == selectedProvider.rawValue }) else {
+            testMessage = "No API key found. Please save a key first."
+            showTestAlert = true
+            return
+        }
+
+        isTesting = true
+        testMessage = nil
 
         Task {
             do {
                 let provider = ProviderFactory.createProvider(type: selectedProvider)
-                provider.configure(apiKey: apiKeyInput)
+                provider.configure(apiKey: savedKey.apiKey)
 
                 let isValid = try await provider.validateAPIKey()
 
                 await MainActor.run {
                     if isValid {
-                        // Save or update API key
-                        if let existingKey = apiKeys.first(where: { $0.provider == selectedProvider.rawValue }) {
-                            existingKey.updateKey(apiKeyInput)
-                        } else {
-                            let newKey = APIKeyStore(provider: selectedProvider.rawValue, apiKey: apiKeyInput)
-                            modelContext.insert(newKey)
-                        }
-
-                        try? modelContext.save()
-
-                        validationMessage = "API key saved successfully!"
+                        testMessage = "API key is valid and working!"
                     } else {
-                        validationMessage = "API key validation failed. Please check your key."
+                        testMessage = "API key validation failed. The key may be invalid."
                     }
 
-                    isValidating = false
-                    showValidationAlert = true
+                    isTesting = false
+                    showTestAlert = true
                 }
             } catch {
                 await MainActor.run {
                     if let apiError = error as? AIProviderError {
-                        validationMessage = apiError.errorDescription
+                        testMessage = apiError.errorDescription
                     } else {
-                        validationMessage = "Error: \(error.localizedDescription)"
+                        testMessage = "Error testing key: \(error.localizedDescription)"
                     }
-                    isValidating = false
-                    showValidationAlert = true
+                    isTesting = false
+                    showTestAlert = true
                 }
             }
         }
