@@ -87,7 +87,7 @@ class GameManager {
         isProcessing = false
     }
 
-    func makeGuess(_ guess: GuardType) {
+    func makeGuess(_ guess: GuardType, context: ModelContext) {
         guard let actualGuard = currentGuardType,
               let session = currentSession else {
             return
@@ -95,6 +95,9 @@ class GameManager {
 
         // Record the guess
         session.completeGame(playerGuess: guess.rawValue)
+
+        // Save context to persist game results
+        try? context.save()
 
         // Determine if guess was correct
         let isCorrect = (guess == actualGuard)

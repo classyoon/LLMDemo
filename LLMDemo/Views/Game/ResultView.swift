@@ -12,7 +12,7 @@ struct ResultView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    var gameManager: GameManager
+    @Bindable var gameManager: GameManager
 
     private var isCorrect: Bool {
         if case .gameOver(let result) = gameManager.currentState {
